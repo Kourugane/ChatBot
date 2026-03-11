@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Modo Entrenamiento · Chatbot FAQ</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+</head>
+<body class="admin-page">
+
+  <div class="bg-texture"></div>
+  <div class="blob blob-a"></div>
+  <div class="blob blob-b"></div>
+
+  <div class="admin-shell">
+    <aside class="sidebar">
+      <div class="sidebar-logo">
+        <span class="logo-icon">🍽️</span>
+        <div>
+          <div class="logo-text">Chatbot FAQ</div>
+          <div class="logo-sub">Panel de Administración</div>
+        </div>
+      </div>
+      <nav class="sidebar-nav">
+        <a href="/admin"           class="nav-item">📚 Base de Conocimiento</a>
+        <a href="/admin/analytics" class="nav-item">📊 Analíticas</a>
+        <a href="/admin/training"  class="nav-item active">🎯 Entrenamiento</a>
+        <a href="/"                class="nav-item">💬 Chat en Vivo</a>
+      </nav>
+      <div class="sidebar-stats">
+        <div class="stat-row">
+          <span>Sin responder</span>
+          <strong class="stat-val" style="color: var(--warn)">{{ questions|length }}</strong>
+        </div>
+      </div>
+    </aside>
+
+    <main class="admin-main">
+
+      <div class="admin-topbar">
+        <div>
+          <h1 class="admin-title">🎯 Modo Entrenamiento</h1>
+          <p class="admin-subtitle">Preguntas que el chatbot no pudo responder — conviértelas en conocimiento</p>
+        </div>
+      </div>
+
+      {% with msgs = get_flashed_messages(with_categories=true) %}
+        {% if msgs %}
+          {% for cat, msg in msgs %}
+            <div class="flash flash-{{ cat }}">{{ '✅' if cat == 'success' else '❌' }} {{ msg }}</div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+
+      {% if questions %}
+
+      <!-- Explicación del flujo -->
+      <div class="info-banner">
+        <span>ℹ️</span>
+        <div>
+          <strong>¿Cómo funciona?</strong>
+          Estas son preguntas reales que los clientes enviaron y el chatbot no pudo responder.
+          Selecciona una, escribe la respuesta correcta y las palabras clave, y luego haz clic en
+          <em>"Convertir a Base de Conocimiento"</em> para que el chatbot aprenda a responderla en el futuro.
+        </div>
+      </div>
+
+      <div class="training-grid">
+        {% for q in questions %}
+        <div class="training-card" id="card-{{ q.id }}">
+          <div class="training-card-header">
+            <div class="training-q-text">
+              <span class="q-number">#{{ loop.index }}</span>
+              "{{ q.question }}"
+            </div>
+            <div class="training-meta">
+              <span class="freq-badge">{{ q.frequency }}x</span>
+              <span class="recent-time">{{ q.timestamp }}</span>
+            </div>
+          </div>
+
+          <!-- Formulario de conversión -->
+          <form method="POST" action="/admin/training/convert" class="train-form" id="form-{{ q.id }}">
+            <input type="hidden" name="uq_id" value="{{ q.id }}" />
+
+            <label>Reformular pregunta <span class="hint">(puedes editarla)</span></label>
+            <input type="text" name="question" value="{{ q.question }}"
+              placeholder="Pregunta para la base de conocimiento" required />
+
+            <label>Respuesta correcta</label>
+            <textarea name="answer" rows="3"
+              placeholder="Escribe aquí la respuesta que el chatbot debe dar…" required></textarea>
+
+            <label>Palabras clave <span class="hint">(separadas por coma)</span></label>
+            <input type="text" name="keywords"
+              placeholder="ej: horario, horas, abierto, cerrado" required />
+
+            <div class="train-actions">
+              <form method="POST" action="/admin/training/delete" style="display:inline"
+                onsubmit="return confirm('¿Descartar esta pregunta?')">
+                <input type="hidden" name="uq_id" value="{{ q.id }}" />
+                <button type="submit" class="btn-delete">🗑️ Descartar</button>
+              </form>
+              <button type="submit" form="form-{{ q.id }}" class="btn-primary">
+                ✅ Convertir a Base de Conocimiento
+              </button>
+            </div>
+          </form>
+        </div>
+        {% endfor %}
+      </div>
+
+      {% else %}
+      <div class="table-card">
+        <div class="empty-state">
+          <div class="empty-icon">🎉</div>
+          <p><strong>¡Excelente!</strong> No hay preguntas sin respuesta en este momento.</p>
+          <p>El chatbot está respondiendo correctamente todas las consultas recibidas.</p>
+          <a href="/admin" class="btn-primary" style="margin-top: 16px; display:inline-block">
+            Ver Base de Conocimiento
+          </a>
+        </div>
+      </div>
+      {% endif %}
+
+    </main>
+  </div>
+
+  <script>
+    document.querySelectorAll(".flash").forEach(el => {
+      setTimeout(() => { el.style.opacity = "0"; }, 4500);
+      setTimeout(() => el.remove(), 5000);
+    });
+  </script>
+</body>
+</html>

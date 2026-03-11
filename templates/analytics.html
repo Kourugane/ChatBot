@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Analíticas · Chatbot FAQ</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+</head>
+<body class="admin-page">
+
+  <div class="bg-texture"></div>
+  <div class="blob blob-a"></div>
+  <div class="blob blob-b"></div>
+
+  <div class="admin-shell">
+    <aside class="sidebar">
+      <div class="sidebar-logo">
+        <span class="logo-icon">🍽️</span>
+        <div>
+          <div class="logo-text">Chatbot FAQ</div>
+          <div class="logo-sub">Panel de Administración</div>
+        </div>
+      </div>
+      <nav class="sidebar-nav">
+        <a href="/admin"           class="nav-item">📚 Base de Conocimiento</a>
+        <a href="/admin/analytics" class="nav-item active">📊 Analíticas</a>
+        <a href="/admin/training"  class="nav-item">🎯 Entrenamiento</a>
+        <a href="/"                class="nav-item">💬 Chat en Vivo</a>
+      </nav>
+    </aside>
+
+    <main class="admin-main">
+
+      <div class="admin-topbar">
+        <div>
+          <h1 class="admin-title">📊 Analíticas del Chat</h1>
+          <p class="admin-subtitle">Estadísticas y actividad del asistente virtual</p>
+        </div>
+        <a href="/admin/analytics" class="btn-secondary">🔄 Actualizar</a>
+      </div>
+
+      <!-- Tarjetas de estadísticas -->
+      <div class="stats-grid">
+        <div class="stat-card stat-blue">
+          <div class="stat-icon">💬</div>
+          <div class="stat-number">{{ stats.total }}</div>
+          <div class="stat-label">Total de preguntas</div>
+        </div>
+        <div class="stat-card stat-green">
+          <div class="stat-icon">✅</div>
+          <div class="stat-number">{{ stats.answered }}</div>
+          <div class="stat-label">Preguntas respondidas</div>
+        </div>
+        <div class="stat-card stat-red">
+          <div class="stat-icon">❓</div>
+          <div class="stat-number">{{ stats.unanswered }}</div>
+          <div class="stat-label">Sin respuesta</div>
+        </div>
+        <div class="stat-card stat-orange">
+          <div class="stat-icon">🎯</div>
+          <div class="stat-number">
+            {% if stats.total > 0 %}
+              {{ "%.0f"|format((stats.answered / stats.total) * 100) }}%
+            {% else %}
+              0%
+            {% endif %}
+          </div>
+          <div class="stat-label">Tasa de resolución</div>
+        </div>
+      </div>
+
+      <!-- Barra de progreso de resolución -->
+      {% if stats.total > 0 %}
+      <div class="table-card" style="padding: 20px 24px;">
+        <div class="section-label">Tasa de resolución global</div>
+        <div class="progress-bar-wrap">
+          {% set pct = (stats.answered / stats.total * 100)|int %}
+          <div class="progress-bar" style="width: {{ pct }}%"></div>
+        </div>
+        <div style="font-size:.8rem; color: var(--text-muted); margin-top:6px;">
+          {{ stats.answered }} de {{ stats.total }} preguntas respondidas correctamente ({{ pct }}%)
+        </div>
+      </div>
+      {% endif %}
+
+      <div class="two-col-grid">
+
+        <!-- Preguntas más frecuentes -->
+        <div class="table-card">
+          <div class="card-header-row">
+            <h2 class="card-title">🔥 Preguntas Más Frecuentes</h2>
+          </div>
+          {% if stats.top_questions %}
+          <table class="kb-table compact-table">
+            <thead>
+              <tr><th>#</th><th>Pregunta</th><th>Veces</th></tr>
+            </thead>
+            <tbody>
+              {% for item in stats.top_questions %}
+              <tr>
+                <td class="id-cell">{{ loop.index }}</td>
+                <td class="q-cell">{{ item.message }}</td>
+                <td><span class="freq-badge">{{ item.freq }}</span></td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+          {% else %}
+          <div class="empty-state">
+            <div class="empty-icon">📭</div>
+            <p>Aún no hay conversaciones registradas.</p>
+          </div>
+          {% endif %}
+        </div>
+
+        <!-- Últimas 10 conversaciones -->
+        <div class="table-card">
+          <div class="card-header-row">
+            <h2 class="card-title">🕐 Últimas Conversaciones</h2>
+          </div>
+          {% if stats.recent %}
+          <div class="recent-list">
+            {% for item in stats.recent %}
+            <div class="recent-item">
+              <div class="recent-meta">
+                <span class="recent-time">{{ item.timestamp }}</span>
+                <span class="score-badge {% if item.similarity_score >= 0.3 %}score-good{% else %}score-bad{% endif %}">
+                  {{ "%.0f"|format(item.similarity_score * 100) }}%
+                </span>
+              </div>
+              <div class="recent-q">👤 {{ item.message }}</div>
+              <div class="recent-a">🤖 {{ item.response[:120] }}{% if item.response|length > 120 %}…{% endif %}</div>
+            </div>
+            {% endfor %}
+          </div>
+          {% else %}
+          <div class="empty-state">
+            <div class="empty-icon">💬</div>
+            <p>No hay conversaciones recientes.</p>
+          </div>
+          {% endif %}
+        </div>
+
+      </div><!-- /two-col-grid -->
+
+      {% if stats.unanswered_q > 0 %}
+      <div class="training-nudge">
+        <span class="nudge-icon">🎯</span>
+        <div>
+          <strong>Hay {{ stats.unanswered_q }} pregunta(s) sin respuesta en el sistema.</strong>
+          <p>Ve al modo de entrenamiento para convertirlas en nuevas entradas de conocimiento.</p>
+        </div>
+        <a href="/admin/training" class="btn-primary">Ir a Entrenamiento →</a>
+      </div>
+      {% endif %}
+
+    </main>
+  </div>
+
+</body>
+</html>

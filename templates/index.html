@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Asistente Virtual · Nuestro Restaurante</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+</head>
+<body class="chat-page">
+
+  <div class="bg-texture"></div>
+  <div class="blob blob-a"></div>
+  <div class="blob blob-b"></div>
+  <div class="blob blob-c"></div>
+
+  <div class="chat-shell">
+
+    <!-- Cabecera -->
+    <header class="chat-header">
+      <div class="agent-avatar">
+        <span class="avatar-emoji">🍽️</span>
+        <span class="status-dot" title="En línea"></span>
+      </div>
+      <div class="agent-info">
+        <h1 class="agent-name">Asistente Virtual</h1>
+        <p class="agent-status">
+          <span class="online-pulse"></span>En línea · Responde al instante
+        </p>
+      </div>
+      <a href="/admin" class="admin-link" title="Panel de administración">⚙</a>
+    </header>
+
+    <!-- Ventana de chat -->
+    <main class="chat-window" id="chatWindow">
+      <!-- Mensaje de bienvenida profesional (Tarea 7) -->
+      <div class="message bot-message intro-msg" id="introMsg">
+        <div class="bubble welcome-bubble">
+          <div class="welcome-header">
+            <span class="wave">👋</span>
+            <strong>¡Hola! Bienvenido/a</strong>
+          </div>
+          <p>Soy el asistente virtual de <strong>Nuestro Restaurante</strong>. Puedo ayudarte con:</p>
+          <ul class="welcome-list">
+            <li>🕐 Horarios de atención</li>
+            <li>🛵 Servicio de domicilios</li>
+            <li>💳 Formas de pago</li>
+            <li>📍 Ubicación y cómo llegar</li>
+            <li>📅 Reservas y eventos</li>
+          </ul>
+          <p class="welcome-cta">Escribe tu pregunta o selecciona una opción abajo. 👇</p>
+        </div>
+        <span class="msg-time" id="introTime"></span>
+      </div>
+    </main>
+
+    <!-- Sugerencias rápidas (Tarea 3) -->
+    <div class="suggestion-bar" id="suggestionBar">
+      <button class="chip" onclick="sendSuggestion(this)">¿Cuál es el horario?</button>
+      <button class="chip" onclick="sendSuggestion(this)">¿Hacen domicilios?</button>
+      <button class="chip" onclick="sendSuggestion(this)">¿Aceptan tarjeta?</button>
+      <button class="chip" onclick="sendSuggestion(this)">¿Dónde están ubicados?</button>
+      <button class="chip" onclick="sendSuggestion(this)">¿Cómo hago una reserva?</button>
+      <button class="chip" onclick="sendSuggestion(this)">¿Tienen promociones?</button>
+      <button class="chip" onclick="sendSuggestion(this)">¿Tienen menú infantil?</button>
+    </div>
+
+    <!-- Barra de entrada -->
+    <footer class="chat-footer">
+      <input
+        type="text"
+        id="msgInput"
+        class="msg-input"
+        placeholder="Escribe tu pregunta…"
+        autocomplete="off"
+        maxlength="350"
+      />
+      <button class="send-btn" id="sendBtn" onclick="sendMessage()" title="Enviar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+             stroke-linecap="round" stroke-linejoin="round">
+          <line x1="22" y1="2" x2="11" y2="13"></line>
+          <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+        </svg>
+      </button>
+    </footer>
+
+  </div><!-- /chat-shell -->
+
+  <script src="{{ url_for('static', filename='chat.js') }}"></script>
+  <script>
+    document.getElementById("introTime").textContent = fmtTime(new Date());
+  </script>
+</body>
+</html>

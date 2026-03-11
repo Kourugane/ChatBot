@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Panel de Administración · Chatbot FAQ</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+</head>
+<body class="admin-page">
+
+  <div class="bg-texture"></div>
+  <div class="blob blob-a"></div>
+  <div class="blob blob-b"></div>
+
+  <div class="admin-shell">
+
+    <!-- Barra lateral -->
+    <aside class="sidebar">
+      <div class="sidebar-logo">
+        <span class="logo-icon">🍽️</span>
+        <div>
+          <div class="logo-text">Chatbot FAQ</div>
+          <div class="logo-sub">Panel de Administración</div>
+        </div>
+      </div>
+      <nav class="sidebar-nav">
+        <a href="/admin"            class="nav-item active">📚 Base de Conocimiento</a>
+        <a href="/admin/analytics"  class="nav-item">📊 Analíticas</a>
+        <a href="/admin/training"   class="nav-item">🎯 Entrenamiento</a>
+        <a href="/"                 class="nav-item">💬 Chat en Vivo</a>
+      </nav>
+      <div class="sidebar-stats">
+        <div class="stat-row">
+          <span>Total de entradas</span>
+          <strong class="stat-val">{{ entries|length }}</strong>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Contenido principal -->
+    <main class="admin-main">
+
+      <div class="admin-topbar">
+        <div>
+          <h1 class="admin-title">Base de Conocimiento</h1>
+          <p class="admin-subtitle">Gestiona las preguntas y respuestas del chatbot</p>
+        </div>
+        <button class="btn-primary" onclick="openModal('addModal')">+ Agregar Entrada</button>
+      </div>
+
+      <!-- Mensajes flash -->
+      {% with msgs = get_flashed_messages(with_categories=true) %}
+        {% if msgs %}
+          {% for cat, msg in msgs %}
+            <div class="flash flash-{{ cat }}">
+              {{ '✅' if cat == 'success' else '❌' }} {{ msg }}
+            </div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+
+      <!-- Tabla de entradas -->
+      <div class="table-card">
+        {% if entries %}
+        <table class="kb-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Pregunta</th>
+              <th>Respuesta</th>
+              <th>Palabras clave</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for e in entries %}
+            <tr>
+              <td class="id-cell">{{ e.id }}</td>
+              <td class="q-cell">{{ e.question }}</td>
+              <td class="a-cell">{{ e.answer }}</td>
+              <td class="kw-cell">
+                {% for kw in e.keywords.split(',') %}
+                  <span class="kw-tag">{{ kw.strip() }}</span>
+                {% endfor %}
+              </td>
+              <td class="action-cell">
+                <button class="btn-edit"
+                  onclick="openEdit({{ e.id }},
+                    `{{ e.question | replace('`','\\`') | replace('\n',' ') }}`,
+                    `{{ e.answer   | replace('`','\\`') | replace('\n',' ') }}`,
+                    `{{ e.keywords | replace('`','\\`') }}`)">
+                  ✏️ Editar
+                </button>
+                <form method="POST" action="/admin/delete/{{ e.id }}" style="display:inline"
+                  onsubmit="return confirm('¿Estás seguro de que quieres eliminar esta entrada?\n\nPregunta: {{ e.question[:80] }}')">
+                  <button class="btn-delete" type="submit">🗑️ Eliminar</button>
+                </form>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+          <div class="empty-state">
+            <div class="empty-icon">📭</div>
+            <p>No hay entradas en la base de conocimiento.</p>
+            <p>Agrega tu primera pregunta frecuente arriba.</p>
+          </div>
+        {% endif %}
+      </div>
+
+    </main>
+  </div>
+
+  <!-- ── Modal: Agregar ── -->
+  <div class="modal-overlay" id="addModal" onclick="closeOnOverlay(event,'addModal')">
+    <div class="modal">
+      <div class="modal-header">
+        <h2>➕ Agregar Nueva Entrada</h2>
+        <button class="modal-close" onclick="closeModal('addModal')">✕</button>
+      </div>
+      <form method="POST" action="/admin/add" class="modal-form">
+        <label>Pregunta</label>
+        <input type="text" name="question"
+          placeholder="ej: ¿Cuál es el horario de atención?" required />
+
+        <label>Respuesta</label>
+        <textarea name="answer" rows="4"
+          placeholder="ej: Estamos abiertos de lunes a viernes de 8 AM a 10 PM." required></textarea>
+
+        <label>Palabras clave <span class="hint">(separadas por coma)</span></label>
+        <input type="text" name="keywords"
+          placeholder="ej: horario, horas, abierto, cerrado, atención" required />
+
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" onclick="closeModal('addModal')">Cancelar</button>
+          <button type="submit" class="btn-primary">💾 Guardar Entrada</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ── Modal: Editar ── -->
+  <div class="modal-overlay" id="editModal" onclick="closeOnOverlay(event,'editModal')">
+    <div class="modal">
+      <div class="modal-header">
+        <h2>✏️ Editar Entrada</h2>
+        <button class="modal-close" onclick="closeModal('editModal')">✕</button>
+      </div>
+      <form method="POST" id="editForm" class="modal-form">
+        <label>Pregunta</label>
+        <input type="text" name="question" id="editQuestion" required />
+
+        <label>Respuesta</label>
+        <textarea name="answer" id="editAnswer" rows="4" required></textarea>
+
+        <label>Palabras clave <span class="hint">(separadas por coma)</span></label>
+        <input type="text" name="keywords" id="editKeywords" required />
+
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" onclick="closeModal('editModal')">Cancelar</button>
+          <button type="submit" class="btn-primary">✅ Actualizar Entrada</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    function openModal(id)  { document.getElementById(id).classList.add("active"); }
+    function closeModal(id) { document.getElementById(id).classList.remove("active"); }
+    function closeOnOverlay(e, id) { if (e.target === document.getElementById(id)) closeModal(id); }
+
+    function openEdit(id, q, a, kw) {
+      document.getElementById("editForm").action = `/admin/edit/${id}`;
+      document.getElementById("editQuestion").value = q;
+      document.getElementById("editAnswer").value   = a;
+      document.getElementById("editKeywords").value = kw;
+      openModal("editModal");
+    }
+
+    document.querySelectorAll(".flash").forEach(el => {
+      setTimeout(() => { el.style.opacity = "0"; el.style.transform = "translateY(-4px)"; }, 4500);
+      setTimeout(() => el.remove(), 5000);
+    });
+  </script>
+</body>
+</html>
